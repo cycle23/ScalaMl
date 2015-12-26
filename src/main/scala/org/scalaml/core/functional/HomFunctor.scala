@@ -25,17 +25,17 @@ object TensorFunctor {
      * Definition of the Functor for the the vector field. The transformation is implemented
      * through a covariant functor 'map'
      */
-  
+  // TODO: convert to use of type classes
   type Hom[T] = {
-    type Right[X] = Function1[X,T]
-    type Left[X] = Function1[T,X]
+    type Right[X] = X=>T
+    type Left[X] = T=>X
   }
   
   
   trait VectorFtor[T] extends Functor[(Hom[T])#Left] { 
     self =>
-      override def map[U,V](vu: Function1[T,U])(f: U =>V): 
-        Function1[T,V] = f.compose(vu)
+      override def map[U,V](vu: T => U)(f: U =>V):
+        T=>V = f.compose(vu)
   }
 
   
@@ -51,14 +51,14 @@ object TensorFunctor {
   
   trait CoVectorFtor[T] extends CoFunctor[(Hom[T])#Right] {
     self =>
-      override def map[U,V](vu: Function1[U,T])(f: V =>U): 
-         Function1[V,T] = f.andThen(vu)
+      override def map[U,V](vu: U=>T)(f: V =>U):
+         V=>T = f.andThen(vu)
   }
   
-  implicit class coVector2Ftor[U, T](vu: Function1[U, T]) extends CoVectorFtor[T] {
-    final def map[V](f: V => U): Function1[V, T] = super.map(vu)(f) 
+  implicit class coVector2Ftor[U, T](vu: U=>T) extends CoVectorFtor[T] {
+    final def map[V](f: V => U): V=>T = super.map(vu)(f)
         
-    def compose[V, W](f: V => U, g: W => V): Function1[W, T] = super.map(vu)(f).map(g)
+    def compose[V, W](f: V => U, g: W => V): W=>T = super.map(vu)(f).map(g)
   }
 }
 

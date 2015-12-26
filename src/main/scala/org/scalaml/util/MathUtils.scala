@@ -52,9 +52,9 @@ object MathUtils {
 	@implicitNotFound(msg = "DMatrix  Conversion from type $T to Double is undefined")
 	class DMatrix(
 			val nRows: Int, 
-			val nCols: Int, 
+			val nCols: Int,
 			val data: DblArray) {
-	  
+
 		import DMatrix._
 		check(nRows, nCols, data)
 		
@@ -69,7 +69,7 @@ object MathUtils {
 		final def apply(i: Int, j: Int): Double = {
 			require(i < nRows, s"Matrix.apply Row index $i should be < $nRows")
 			require(j < nCols, s"Matrix.apply Column index $j should be < $nCols")
-			data(i*nCols+j)
+			data(i * nCols + j)
 		}
 	
 			/**
@@ -131,7 +131,7 @@ object MathUtils {
 			
 			val i = iRow*nCols		
 			Range(0, nCols).foreach(k => {
-				val old = data(i+k)
+				val old = data(i + k)
 				data.update(i + k, old/t) 
 			})
 			this
@@ -148,15 +148,15 @@ object MathUtils {
 			require(i >= 0 & i < nRows, s"Matrix.+= Row index $i is out of bounds ")
 			require(j >= 0 & j < nCols, s"Matrix.+= Column index $j is out of bounds ")
 			
-			val index = i*nCols +j
-			data.update(index, data(index)+ t)
+			val index = i * nCols + j
+			data.update(index, data(index) + t)
 			this
 		}
 		
 		def update(i: Int, j : Int, t: Double): this.type = {
 			require(i >= 0 & i < nRows, s"Matrix.+= Row index $i is out of bounds ")
 			require(j >= 0 & j < nCols, s"Matrix.+= Column index $j is out of bounds ")
-			data.update(i*nCols +j, t)
+			data.update(i * nCols + j, t)
 			this
 		}
 	
@@ -174,7 +174,7 @@ object MathUtils {
 			require(j >= 0 & j < nCols, s"Matrix.+= Column index $j is out of bounds ")
 			
 			val newData = data.clone
-			val index = i*nCols +j
+			val index = i * nCols + j
 			newData.update(index, data(index) + t)
 			new DMatrix(nRows,nCols, newData)
 		}
@@ -192,7 +192,7 @@ object MathUtils {
 			val i = iRow*nCols
 			
 			Range(0, nCols).foreach(k => {
-				val old = data(i+k)
+				val old = data(i + k)
 				data.update(i + k, old + t) 
 			})
 		}
@@ -200,7 +200,7 @@ object MathUtils {
 		@throws(classOf[IllegalArgumentException])
 		def update(iRow: Int, t: Double): Unit = {
 		  require(iRow >= 0 & iRow < nRows, s"Matrix.+= row index $iRow is out of bounds ")
-			val i = iRow*nCols
+			val i = iRow * nCols
 			Range(0, nCols).foreach(k => data.update(i + k, t)  )
 		}
 			/**
@@ -211,8 +211,8 @@ object MathUtils {
 			val m = DMatrix(nCols, nRows)
 			
 			Range(0, nRows).foreach(i => {
-				val col = i*nCols
-				Range(0, nCols).foreach(j => m += (j, i, data(col+j)))
+				val col = i * nCols
+				Range(0, nCols).foreach(j => m += (j, i, data(col + j)))
 			})
 			m
 		}
@@ -221,7 +221,7 @@ object MathUtils {
 		   * Return the total number of elements in the matrix
 		   */
 		@inline
-		final def size = nRows*nCols
+		final def size: Int = nRows * nCols
 	
 			/**
 			 * Method that normalizes the rows of a matrix so the sum of values is 1.0. This method

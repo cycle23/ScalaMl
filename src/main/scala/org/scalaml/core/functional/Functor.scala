@@ -91,16 +91,19 @@ trait BiFunctor[M[_, _]] {
 		 * @author Patrick Nicolas
 		 * @version 0.99
 		 */
-trait BiProdFunctor[M[_, _], N[_,_]]  
+trait BiProdFunctor[M[_, _], N[_,_]]
+    // TODO: find a way to avoid structural types here
 		extends BiFunctor[({type L[X, Y] = (M[X, Y], N[X, Y])})#L ] {
-		// abstract values
+
+	// abstract values
 	val bf: BiFunctor[M]
-			val bg: BiFunctor[N]
+	val bg: BiFunctor[N]
 	
 	
 	override def map[U, V, W, Z]
 			(mnuv: (M[U, V], N[U,V]))
-			(fuw: U => W, fvz: V => Z): (M[W, Z], N[W,Z]) = 
+			(fuw: U => W, fvz: V => Z): (M[W, Z], N[W,Z]) =
+  // TODO: Use destructuring bindings instead of _1, _2
 		(bf.map(mnuv._1)(fuw, fvz), bg.map(mnuv._2)(fuw, fvz))
 } 
 

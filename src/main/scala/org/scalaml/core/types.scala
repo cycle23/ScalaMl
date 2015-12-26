@@ -49,6 +49,7 @@ object Types {
 		type DblPairVector = Vector[DblPair]
 		
 		type XSeries[T] = Vector[T]
+    // TODO: Why not Vector[Vector[T]]?
 		type XVSeries[T] = Vector[Array[T]]
 
 		case class Pair(val p: DblPair) {
@@ -102,7 +103,9 @@ object Types {
 			  v.zipWithIndex.map{ case(x ,n) => s"${x}:${n}"}.mkString(", ")
 
 			else
-			  v.mkString(", ").dropRight(1)
+        v.mkString(", ")
+			// TODO: This can't be right, just drops last character. mkString doesn't append a final comma or space.
+			  //v.mkString(", ").dropRight(1)
 		}
 
 		/**

@@ -50,7 +50,7 @@ object PlotterEval extends Eval {
 	private val VOL_COLUMN_INDEX = 5
 	private val HIGH_INDEX = 2
 	private val LOW_INDEX = 3
-	private val pathName = "resources/data/chap1/CSCO.csv"
+	private val pathName = "resources/data/Chap1/CSCO.csv"
     
  
 		/**
