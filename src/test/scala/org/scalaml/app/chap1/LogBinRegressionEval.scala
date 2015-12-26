@@ -51,12 +51,15 @@ object LogBinRegressionEval extends Eval {
 	private val NITERS = 4000
 	private val EPS = 5e-4
 	private val ETA = 0.005
-	private val path_training = "resources/data/chap1/CSCO.csv"
-	private val path_test = "resources/data/chap1/CSCO2.csv"
+	private val path_training = "resources/data/Chap1/CSCO.csv"
+	private val path_test = "resources/data/Chap1/CSCO2.csv"
 
 	
 	type Labels = (XVSeries[Double], XSeries[Double])
-	  
+  // indices for our specific XVSeries features
+  val volatilityI = 0
+  val volumeI = 1
+
 		/**
 		 * Execution of the scalatest for '''LogBinRegression''' class. This method is invoked by the 
 		 * actor-based test framework function, ScalaMlTest.evaluate.
@@ -78,28 +81,40 @@ object LogBinRegressionEval extends Eval {
 		
 			// Uses the for-comprehension loop to implement the computational data flow
 		(for {
-				// Data preparation and training
-			volatilityVolP <- load(path_training)								// extract volatility relative to volume
-			minMaxVec <- Try(new MinMaxVector(volatilityVolP._1))		// create a MinMax normalizer
-			normVolatilityVol <- Try(minMaxVec.normalize(0.0, 1.0))	// normalize over [0, 1]
-			classifier <- logRegr(normVolatilityVol, volatilityVolP._2)		// Generate the model
+       // Data preparation and training
+       // 1. extract volatility relative to volume
+      (volatilityVolume, priceRatio) <- load(path_training)
+      // 2. create a MinMax normalizer
+			minMaxVec <- Try(new MinMaxVector(volatilityVolume))
+      // 3. normalize over [0, 1]
+			normVolatilityVol <- Try(minMaxVec.normalize(0.0, 1.0))
+      // 4. Generate the model
+			classifier <- logRegr(normVolatilityVol, priceRatio)
 			
-				// Test logistic regression
-			testValues <- load(path_test)														// Load the test data
-			normTestValue0 <- minMaxVec.normalize(testValues._1(0))	// normalize test values
-			class0 <- classifier.classify(normTestValue0) 		
-			normTestValue1 <- minMaxVec.normalize(testValues._1(1))	// classify first data point
-			class1 <- classifier.classify(normTestValue1)						// classify second data point
+      // Test logistic regression
+      // 1. Load the test data
+      (testVolatilityVolume, testPriceRatio) <- load(path_test)
+      // 2. normalize test values
+			normTestValueVolatility <- minMaxVec.normalize(testVolatilityVolume(volatilityI))
+      // 3. classify first data point
+			classVolatility <- classifier.classify(normTestValueVolatility)
+			normTestValueVolume <- minMaxVec.normalize(testVolatilityVolume(volumeI))
+      // 4. classify second data point
+			classVolume <- classifier.classify(normTestValueVolume)
 		} 
 		yield {
 				// Display the labeled data: Stock price
-			val stockPrice = normalize(volatilityVolP._2)
+			val stockPrice = normalize(priceRatio)
 			displayLabel(stockPrice.get)
 			
 				// Retrieve the model parameters (weigths)
 			val modelStr = classifier.model.toString
-			val result = s"""${toString(testValues._1(0),normTestValue0, class0)}
-					|\n${toString(testValues._1(1),normTestValue1, class1)}""".stripMargin   
+			val result = (s"""${toString(testVolatilityVolume(volatilityI),
+                                  normTestValueVolatility,
+                                  classVolatility)}""" +
+                    s"""|\n${toString(testVolatilityVolume(volumeI),
+                                  normTestValueVolume,
+                                  classVolume)}""").stripMargin
 			
 			show(s"$modelStr\n$result")
 		}).get
@@ -130,18 +145,43 @@ object LogBinRegressionEval extends Eval {
 		 */
 	private def load(fileName: String): Try[Labels] =  {
 		val src =  Source.fromFile(fileName)
-		val data = extract(src.getLines.map( _.split(",")).drop(1))
+	  val lines = src.getLines
+    // iterator of string arrays
+    val fields = lines.map(_.split(","))
+    // skip first row (header)
+    val cols = fields.drop(1)
+		val data = extract(cols)
 		src.close
 		data
 	}
 
 	private def extract(cols: Iterator[Array[String]]): Try[Labels] = Try {
 		val features = Array[YahooFinancials](LOW, HIGH, VOLUME, OPEN, ADJ_CLOSE)
+    // get rid of magic number complaints
+    // TODO: Seems like the use of enumeration is causing more trouble than worth..
+    // Maybe sealed case class would help simplify this
+    // NOTE - it only complains once it is using '4' for adj_close
+    val low = 0; val high = 1; val volume = 2; val open = 3; val adj_close = 4
 		val conversion = toDblArray(features)
 
-		cols.map( conversion(_))
-				.toVector
-				.map(x => (Array[Double](1.0 - x(0)/x(1), x(2)), x(4)/x(3)- 1.0)).unzip
+		// vector of values (immutable, fixed length)
+    val featureVals = cols.map( conversion(_)).toVector
+    // get rid of magic number complaints, may consider adding 1.0 to the ignore
+    // .. but find this sort of useful to explain the math as well
+    val maxVolatility: Double = 1.0
+    val ratioFactor: Double = 1.0
+    // return XVSeries(volatility [gap between low and high..
+    //                                            1.0 => infinite,
+    //                                            0.0 => no diff],volume [# of trades])
+    //    and XSeries(relative change from close/open, ie: open * relative-change = adj_close)
+    // ... as pairs
+    val XVandXSeriesPairs =
+      featureVals.map(x =>
+        (Array[Double](maxVolatility - x(low)/x(high), x(volume)),
+                       x(adj_close)/x(open)- ratioFactor))
+    // return as two separate collections in order
+    // -- recall that XVSeries is defined as a vector of arrays. (TODO: why not vector[vector]?)
+    XVandXSeriesPairs.unzip
 	}
 
 		/**
