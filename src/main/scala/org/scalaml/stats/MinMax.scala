@@ -68,19 +68,18 @@ class MinMax[T <: AnyVal](val values: XSeries[T])(implicit f: T => Double) {
 	private[this] var scaleFactors: Option[ScaleFactors] = None  
 	
 	protected[this] val minMax =  values./:(zero){(mM, x) => {
-		val min = mM._1
-		val max = mM._2
+		val (min,max) = mM
 		(if(x < min) x else min, if(x > max) x else max)
   }}
 
 		/**
-		 * Computation of minimum values of a vector. This values is
+		 * Computation of minimum value of a vector. This value is
 		 * computed during instantiation
 		 */
 	final def min = minMax._1
 	
 		/**
-		 * Computation of minimum values of a vector. This values is
+		 * Computation of maximum value of a vector. This value is
 		 * computed during instantiation
 		 */
 	final def max = minMax._2
@@ -130,18 +129,32 @@ class MinMax[T <: AnyVal](val values: XSeries[T])(implicit f: T => Double) {
 
 
 class MinMaxVector(series: Vector[DblArray]) {
+	// transpose results in vectors specific to each feature instead of by arrays of features
+  // each of those vectors is then passed into a MinMax structure
+  // the output is a vector where each member is the minMax for a given feature
 	val minMaxVector: Vector[MinMax[Double]] = series.transpose.map(new MinMax[Double](_))
    
 	@throws(classOf[IllegalStateException])
-	final def normalize(low: Double = 0.0, high: Double = 1.0): Vector[DblArray] = 
+	final def normalize(low: Double = 0.0, high: Double = 1.0): Vector[DblArray] =
+    // each feature vector's MinMax.normalize routine is called
+    // transposing the outputs recreates the original pair combinations,
+    // now normalized per feature vector
+    // output is then converted back to Array[Double] (why this pattern again?)
 		minMaxVector.map(_.normalize(low, high)).transpose.map(_.toArray)
 
-    
+  // used to normalize a single input vector of features (observation) with existing scale factors
 	final def normalize(x: DblArray): Try[DblArray] = {
-    val normalized = minMaxVector.zip(x).map{ case( from, to) => from.normalize(to) }
-    
+    // pair the appropriate feature vector with the input value
+    val minMaxVectorZippedWithX = minMaxVector.zip(x)
+    // for each feature, attempt to normalize the value
+    val normalized = minMaxVectorZippedWithX.map{
+        case( from, to) =>
+          from.normalize(to)
+    }
+    // internally, scale factor is an Option, so check for None values
     if( normalized.contains( None) ) 
       throw new IllegalStateException("MinMax.normalize normalization params undefined")
+    // Vector[Try[Double]] => Try[Array[Double]] (kliesli?)
     Try(normalized.map(_.get).toArray)
   }
 }

@@ -146,7 +146,7 @@ object XTSeries {
 		 * @throws implicitNotFound if the implicit ordering is undefined
 		 * @return normalized time series as double elements if max > min, None otherwise
 		 */
-	@implicitNotFound(msg = "XTSeries.normalize convertion from $T to Double undefined")
+	@implicitNotFound(msg = "XTSeries.normalize conversion from $T to Double undefined")
 	@throws(classOf[IllegalStateException])
 	@throws(classOf[IllegalArgumentException])
 	def normalize[T <: AnyVal](
@@ -156,7 +156,7 @@ object XTSeries {
 		Try (Stats[T](xt).normalize(low, high) )
 	
 
-	@implicitNotFound(msg = "XTSeries.normalize convertion from $T to Double undefined")
+	@implicitNotFound(msg = "XTSeries.normalize conversion from $T to Double undefined")
 	@throws(classOf[IllegalStateException])
 	@throws(classOf[IllegalArgumentException])
 	def normalize[T <: AnyVal](xt: XSeries[T])
