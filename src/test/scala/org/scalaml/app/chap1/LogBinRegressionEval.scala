@@ -137,7 +137,7 @@ object LogBinRegressionEval extends Eval {
     // chart of normalized volatility vs. volume
     display(volatilityVolume.map(x => (x(volatilityI), x(volumeI))))
 
-    // Extract labels and create two classes
+    // Normalized values used to extract 'labels' for classification
     val normLabels = normalize(priceRatio).get
 
     // Generate a vector of type (DblPair, Double)
