@@ -42,7 +42,7 @@ import Stats._
 @throws(classOf[IllegalArgumentException])
 class Stats[T <: AnyVal](values: XSeries[T])(implicit f: T => Double) extends MinMax[T](values){
 	require( !values.isEmpty, "Stats: Cannot initialize stats with undefined values")
-  
+  // sums are calculated upon instantiation
 	private[this] val sums = values./:((0.0, 0.0))((acc, s) => (acc._1 + s, acc._2 + s*s))
 	
 		/**

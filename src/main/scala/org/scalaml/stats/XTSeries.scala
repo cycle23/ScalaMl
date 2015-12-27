@@ -152,8 +152,18 @@ object XTSeries {
 	def normalize[T <: AnyVal](
 			xt: XSeries[T], 
 			low: Double, 
-			high: Double)(implicit ordering: Ordering[T], f: T => Double): Try[DblVector] = 	
-		Try (Stats[T](xt).normalize(low, high) )
+			high: Double)(implicit ordering: Ordering[T], f: T => Double): Try[DblVector] =
+		// TODO: Why use the Stats intermediary here?
+    // It does have the effect of giving access to the MinMax normalize routine by class inheritance
+    // and the implicit companion object conversion
+    // could do:
+    //       val mmax = new MinMax[T](xt)
+    //       mmax.normalize(low,high)
+    // Reason I care is there is now an unused side effect sum function/result effectively thrown away here
+    {
+      val statsXT = Stats[T](xt)
+		  Try (statsXT.normalize(low, high) )
+    }
 	
 
 	@implicitNotFound(msg = "XTSeries.normalize conversion from $T to Double undefined")
