@@ -141,15 +141,16 @@ final class LogBinRegression(
       // Shuffle the vector of (observation, label) pairs for the next iteration
       val shuffled = shuffle(obsAndLbl)
 
-      // Traverses the (observation, label) pairs set, to compute the prediced value
+      // Traverses the (observation, label) pairs set, to compute the predicted value
       // using the logistic function (sigmoid) and compare to the labeled data.
-      val errorGrad: (DblVector, Vector[DblArray]) = shuffled.map { case (x, y) =>
-        val inner = dot(x, weights)
-        // Difference between the predicted and labeled data
-        val error = sigmoid(inner) - y
-
-        (error, x.map(_ * error))
-      }.unzip
+      val errorGrad: (DblVector, Vector[DblArray]) =
+        shuffled.map {
+          case (x, y) =>
+            val inner = dot(x, weights)
+            // Difference between the predicted and labeled data
+            val error = sigmoid(inner) - y
+            (error, x.map(_ * error))
+        }.unzip
 
 
       // Compute the new cost as the sum of square value of the error for each point
@@ -238,6 +239,7 @@ object LogBinRegression {
     require(obs.size + 1 == weights.size,
       s"LogBinRegression.dot found obs.size ${obs.size} +1 != weights.size ${weights.size}")
 
+    // use of aggregate here is essentially to allow parallelization
     weights.zip(Array[Double](1.0) ++ obs.view)
       .aggregate(0.0)((s, x) => s + x._1 * x._2, _ + _)
   }
@@ -245,8 +247,8 @@ object LogBinRegression {
   /**
     * Static method to shuffle the order of observations and labels between iterations
     * the gradient descent algorithm. The method is implemented as a tail recursion.
-    * The shuffle is accomplish by partitioning the input data set in segments of random size
-    * and reverse the order of each other segment.
+    * The shuffle is accomplished by partitioning the input data set in segments of random size
+    * and reversing the order of every other segment.
     * @param labelObs input vector of pairs (multi-variable observation, label)
     * @return vector of pairs (observation, label) which order has been shuffled
     * @throws IllegalArgumentException if the labeled observations are undefined.
@@ -264,7 +266,7 @@ object LogBinRegression {
     @scala.annotation.tailrec
     def shuffle(indices: mutable.ArrayBuffer[Int], count: Int, start: Int): Array[Int] = {
       val end = start + Random.nextInt(maxChunkSize)
-      val isOdd = ((count & 0x01) != 0x01)
+      val isOdd = (count & 0x01) != 0x01
 
       if (end >= sz)
         indices.toArray ++ slice(isOdd, start, sz)
@@ -274,7 +276,7 @@ object LogBinRegression {
 
     def slice(isOdd: Boolean, start: Int, end: Int): Array[Int] = {
       val r = Range(start, end).toArray
-      (if (isOdd) r else r.reverse)
+      if (isOdd) r else r.reverse
     }
 
     shuffle(new mutable.ArrayBuffer[Int], 0, 0).map(labelObs(_)).toVector
