@@ -1,20 +1,20 @@
 /**
- * Copyright (c) 2013-2015  Patrick Nicolas - Scala for Machine Learning - All rights reserved
- *
- * Licensed under the Apache License, Version 2.0 (the "License") you may not use this file 
- * except in compliance with the License. You may obtain a copy of the License at
- * 
- * http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software is distributed on an 
- * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * 
- * The source code in this file is provided by the author for the sole purpose of illustrating the 
- * concepts and algorithms presented in "Scala for Machine Learning". 
- * ISBN: 978-1-783355-874-2 Packt Publishing.
- * 
- * Version 0.99
- */
+  * Copyright (c) 2013-2015  Patrick Nicolas - Scala for Machine Learning - All rights reserved
+  *
+  * Licensed under the Apache License, Version 2.0 (the "License") you may not use this file
+  * except in compliance with the License. You may obtain a copy of the License at
+  *
+  * http://www.apache.org/licenses/LICENSE-2.0
+  *
+  * Unless required by applicable law or agreed to in writing, software is distributed on an
+  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  *
+  * The source code in this file is provided by the author for the sole purpose of illustrating the
+  * concepts and algorithms presented in "Scala for Machine Learning".
+  * ISBN: 978-1-783355-874-2 Packt Publishing.
+  *
+  * Version 0.99
+  */
 package org.scalaml.stats
 
 import scala.Array.canBuildFrom
@@ -27,144 +27,141 @@ import org.scalaml.util.DisplayUtils
 import Stats._
 
 
-	/**
-	 * Parameterized class that computes the generic minimun and maximum of a time series. The class
-	 * implements:
-	 * 
-	 * - Computation of minimum and maximum according to scaling factors
-	 * 
-	 * - Normalization using the scaling factors
-	 * @tparam T type of element of the time series view bounded to a double
-	 * @constructor Create MinMax class for a time series of type ''XSeries[T]''
-	 * @param values Time series of single element of type T
-	 * @param f Implicit conversion from type T to Double
-	 * @throws IllegalArgumentException if the time series is empty
-	 * @throws implicitNotFoundException if the implicit convertion to Double is undefined
-	 * 
-	 * @author Patrick Nicolas
-	 * @since 0.99  July 18, 2015
-	 * @version 0.99
-	 * @see Scala for Machine Learning Chapter 1 ''Getting Started''
-	 */
+/**
+  * Parameterized class that computes the generic minimun and maximum of a time series. The class
+  * implements:
+  *
+  * - Computation of minimum and maximum according to scaling factors
+  *
+  * - Normalization using the scaling factors
+  * @tparam T type of element of the time series view bounded to a double
+  * @constructor Create MinMax class for a time series of type ''XSeries[T]''
+  * @param values Time series of single element of type T
+  * @param f Implicit conversion from type T to Double
+  * @throws IllegalArgumentException if the time series is empty
+  * @throws implicitNotFoundException if the implicit convertion to Double is undefined
+  *
+  * @author Patrick Nicolas
+  * @since 0.99  July 18, 2015
+  * @version 0.99
+  * @see Scala for Machine Learning Chapter 1 ''Getting Started''
+  */
 @implicitNotFound(msg = "MinMax conversion to Double undefined")
 @throws(classOf[IllegalArgumentException])
 class MinMax[T <: AnyVal](val values: XSeries[T])(implicit f: T => Double) {
-	require( !values.isEmpty, "MinMax: Cannot initialize stats with undefined values")
-  
-  
-	def this(values: Array[T])(implicit f: T => Double) = this(values.toVector)
+  require(!values.isEmpty, "MinMax: Cannot initialize stats with undefined values")
 
-		/**
-		 * Defines the scaling factors for the computation of minimum and maximum
-		 * @param low lower value of the range target for the normalization
-		 * @param high upper value of the range target for the normalization
-		 * @param ratio  Scaling factor between the source range and target range.
-		 */
-	case class ScaleFactors(low: Double, high: Double, ratio: Double)
-  
-	private val logger = Logger.getLogger("MinMax")
-  
-	private[this] val zero = (Double.MaxValue, -Double.MaxValue)	
-	private[this] var scaleFactors: Option[ScaleFactors] = None  
-	
-	protected[this] val minMax =  values./:(zero){(mM, x) => {
-		val (min,max) = mM
-		(if(x < min) x else min, if(x > max) x else max)
-  }}
 
-		/**
-		 * Computation of minimum value of a vector. This value is
-		 * computed during instantiation
-		 */
-	final def min = minMax._1
-	
-		/**
-		 * Computation of maximum value of a vector. This value is
-		 * computed during instantiation
-		 */
-	final def max = minMax._2
+  def this(values: Array[T])(implicit f: T => Double) = this(values.toVector)
 
-	
+  /**
+    * Defines the scaling factors for the computation of minimum and maximum
+    * @param low lower value of the range target for the normalization
+    * @param high upper value of the range target for the normalization
+    * @param ratio  Scaling factor between the source range and target range.
+    */
+  case class ScaleFactors(low: Double, high: Double, ratio: Double)
 
-	@throws(classOf[IllegalStateException])
-	final def normalize(low: Double = 0.0, high: Double = 1.0): DblVector = 
-		setScaleFactors(low, high).map(scale => {
-	  	values.map( x =>(x - min)*scale.ratio + scale.low)
-	})
-	.getOrElse(throw new IllegalStateException("MinMax.normalize normalization params undefined"))
-	
-	
-	
-	final def normalize(value: Double): Try[Double] = Try {
-		scaleFactors.map( scale => 
-		  if(value <= min) scale.low
-		  else if (value >= max) scale.high
-		  else (value - min)*scale.ratio + scale.low
-		).get
-	}
-	 
-	 		/**
-		 * Normalize the data within a range [l, h]
-		 * @param l lower bound for the normalization
-		 * @param h higher bound for the normalization
-		 * @return vector of values normalized over the interval [0, 1]
-		 * @throws IllegalArgumentException of h <= l
-		 */
-	private def setScaleFactors(low: Double, high: Double): Option[ScaleFactors] = 
-		if( high < low + STATS_EPS)
-			DisplayUtils.none(s"MinMax.set found high - low = $high - $low <= 0 required > ", logger)
-		
-		else {
-			val ratio = (high - low)/(max - min)
-		  
-			if(ratio < STATS_EPS)
-				DisplayUtils.none(s"MinMax.set found ratio $ratio required > EPS ", logger)
-			else {
-				scaleFactors = Some(ScaleFactors(low, high, ratio))
-				scaleFactors
-			}
-		}
+  private val logger = Logger.getLogger("MinMax")
+
+  private[this] val zero = (Double.MaxValue, -Double.MaxValue)
+  private[this] var scaleFactors: Option[ScaleFactors] = None
+
+  protected[this] val minMax = values./:(zero) { (mM, x) => {
+    val (min, max) = mM
+    (if (x < min) x else min, if (x > max) x else max)
+  }
+  }
+
+  /**
+    * Computation of minimum value of a vector. This value is
+    * computed during instantiation
+    */
+  final def min = minMax._1
+
+  /**
+    * Computation of maximum value of a vector. This value is
+    * computed during instantiation
+    */
+  final def max = minMax._2
+
+
+  @throws(classOf[IllegalStateException])
+  final def normalize(low: Double = 0.0, high: Double = 1.0): DblVector =
+    setScaleFactors(low, high).map(scale => {
+      values.map(x => (x - min) * scale.ratio + scale.low)
+    })
+      .getOrElse(throw new IllegalStateException("MinMax.normalize normalization params undefined"))
+
+
+  final def normalize(value: Double): Try[Double] = Try {
+    scaleFactors.map(scale =>
+      if (value <= min) scale.low
+      else if (value >= max) scale.high
+      else (value - min) * scale.ratio + scale.low
+    ).get
+  }
+
+  /**
+    * Normalize the data within a range [l, h]
+    * @param l lower bound for the normalization
+    * @param h higher bound for the normalization
+    * @return vector of values normalized over the interval [0, 1]
+    * @throws IllegalArgumentException of h <= l
+    */
+  private def setScaleFactors(low: Double, high: Double): Option[ScaleFactors] =
+    if (high < low + STATS_EPS)
+      DisplayUtils.none(s"MinMax.set found high - low = $high - $low <= 0 required > ", logger)
+
+    else {
+      val ratio = (high - low) / (max - min)
+
+      if (ratio < STATS_EPS)
+        DisplayUtils.none(s"MinMax.set found ratio $ratio required > EPS ", logger)
+      else {
+        scaleFactors = Some(ScaleFactors(low, high, ratio))
+        scaleFactors
+      }
+    }
 }
 
 
-
 class MinMaxVector(series: Vector[DblArray]) {
-	// transpose results in vectors specific to each feature instead of by arrays of features
+  // transpose results in vectors specific to each feature instead of by arrays of features
   // each of those vectors is then passed into a MinMax structure
   // the output is a vector where each member is the minMax for a given feature
-	val minMaxVector: Vector[MinMax[Double]] = series.transpose.map(new MinMax[Double](_))
-   
-	@throws(classOf[IllegalStateException])
-	final def normalize(low: Double = 0.0, high: Double = 1.0): Vector[DblArray] =
-    // each feature vector's MinMax.normalize routine is called
-    // transposing the outputs recreates the original pair combinations,
-    // now normalized per feature vector
-    // output is then converted back to Array[Double] (why this pattern again?)
-		minMaxVector.map(_.normalize(low, high)).transpose.map(_.toArray)
+  val minMaxVector: Vector[MinMax[Double]] = series.transpose.map(new MinMax[Double](_))
+
+  @throws(classOf[IllegalStateException])
+  final def normalize(low: Double = 0.0, high: Double = 1.0): Vector[DblArray] =
+  // each feature vector's MinMax.normalize routine is called
+  // transposing the outputs recreates the original pair combinations,
+  // now normalized per feature vector
+  // output is then converted back to Array[Double] (why this pattern again?)
+    minMaxVector.map(_.normalize(low, high)).transpose.map(_.toArray)
 
   // used to normalize a single input vector of features (observation) with existing scale factors
-	final def normalize(x: DblArray): Try[DblArray] = {
+  final def normalize(x: DblArray): Try[DblArray] = {
     // pair the appropriate feature vector with the input value
     val minMaxVectorZippedWithX = minMaxVector.zip(x)
     // for each feature, attempt to normalize the value
-    val normalized = minMaxVectorZippedWithX.map{
-        case( from, to) =>
-          from.normalize(to)
+    val normalized = minMaxVectorZippedWithX.map {
+      case (from, to) =>
+        from.normalize(to)
     }
     // internally, scale factor is an Option, so check for None values
-    if( normalized.contains( None) ) 
+    if (normalized.contains(None))
       throw new IllegalStateException("MinMax.normalize normalization params undefined")
     // Vector[Try[Double]] => Try[Array[Double]] (kliesli?)
     Try(normalized.map(_.get).toArray)
   }
 }
-	
 
-object MinMax  {
-	def apply[T <: AnyVal](values: XSeries[T])(implicit f: T => Double): Try[MinMax[T]] = 
-		Try(new MinMax[T](values))
+
+object MinMax {
+  def apply[T <: AnyVal](values: XSeries[T])(implicit f: T => Double): Try[MinMax[T]] =
+    Try(new MinMax[T](values))
 }
-
 
 
 // -------------------------  EOF -----------------------------------------
