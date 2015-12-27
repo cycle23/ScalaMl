@@ -106,7 +106,7 @@ object LogBinRegressionEval extends Eval {
         val stockPrice = normalize(priceRatio)
         displayLabel(stockPrice.get)
 
-        // Retrieve the model parameters (weigths)
+        // Retrieve the model parameters (weights)
         val modelStr = classifier.model.toString
         val result = (s"""${
           toString(testVolatilityVolume(0),
