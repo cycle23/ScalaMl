@@ -143,7 +143,7 @@ final class LogBinRegression(
 
       // Traverses the (observation, label) pairs set, to compute the predicted value
       // using the logistic function (sigmoid) and compare to the labeled data.
-      val errorGrad: (DblVector, Vector[DblArray]) =
+      val (errorGradObs, errorGradLabel): (DblVector, Vector[DblArray]) =
         shuffled.map {
           case (x, y) =>
             val inner = dot(x, weights)
@@ -154,7 +154,7 @@ final class LogBinRegression(
 
 
       // Compute the new cost as the sum of square value of the error for each point
-      val newCost = errorGrad._1.aggregate(0.0)((s, c) => s + c * c, _ + _) * scale
+      val newCost = errorGradObs.aggregate(0.0)((s, c) => s + c * c, _ + _) * scale
 
       // Monitor counters update
       count(COUNT_ERR, newCost)
@@ -167,7 +167,7 @@ final class LogBinRegression(
 
       // otherwise launch a new iteration
       else {
-        val derivatives = Vector[Double](1.0) ++ errorGrad._2.transpose.map(_.sum)
+        val derivatives = Vector[Double](1.0) ++ errorGradLabel.transpose.map(_.sum)
 
         // Apply the gradient descent update formula to compute new weights
         val newWeights = weights.zip(derivatives).map { case (w, df) => w - eta * df }
