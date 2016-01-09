@@ -50,7 +50,7 @@ object LogBinRegressionEval extends Eval {
 
   private val NITERS = 4000
   private val EPS = 5e-4
-  private val ETA = 0.005
+  private val ETA = 0.0005
   private val path_training = "resources/data/Chap1/CSCO.csv"
   private val path_test = "resources/data/Chap1/CSCO2.csv"
 
