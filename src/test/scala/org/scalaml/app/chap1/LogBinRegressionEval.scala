@@ -165,10 +165,10 @@ object LogBinRegressionEval extends Eval {
     // TODO: Seems like the use of enumeration is causing more trouble than worth..
     // Maybe sealed case class would help simplify this (-- see TradingSource for more function helpers..)
     // NOTE - it only complains once it is using '4' for adj_close
-    val low = 0;
-    val high = 1;
-    val volume = 2;
-    val open = 3;
+    val low = 0
+    val high = 1
+    val volume = 2
+    val open = 3
     val adj_close = 4
     val conversion = toDblArray(features)
 
