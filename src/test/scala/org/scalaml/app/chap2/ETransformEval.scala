@@ -68,7 +68,7 @@ object ETransformEval extends Eval {
       type V = Double
 
       override def |> : PartialFunction[U, Try[V]] = {
-        case u: U if (u > 0) => Try(2.0 * u)
+        case u: U if u > 0 => Try(2.0 * u)
       }
     }
 

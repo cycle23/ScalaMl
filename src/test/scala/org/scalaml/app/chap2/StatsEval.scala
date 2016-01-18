@@ -82,7 +82,7 @@ object StatsEval extends Eval with Assertable {
     compare(MEAN, stats.mean, "Mean:") +
       compare(STDDEV, stats.stdDev, "Standard Deviation:") + {
       var sum: Int = 0
-      for (i <- 0 until VALUES.size)
+      for (i <- VALUES.indices)
         yield {
           sum += compare(NORMALIZED(i), normalized(i), "normalize:")
         }
@@ -92,7 +92,7 @@ object StatsEval extends Eval with Assertable {
       compare(NORMAL_005, Stats.normal(0.05), "Gauss(0.05)") +
       compare(NORMAL_005, Stats.normal(0.05), "Gauss(0.95)") + {
       var sum: Int = 0
-      for (i <- 0 until VALUES.size)
+      for (i <- VALUES.indices)
         yield {
           sum += compare(ZSCORED(i), zScored(i), "zScore:")
         }
@@ -127,7 +127,10 @@ object StatsEval extends Eval with Assertable {
   }
 
   private def compare(expected: DblVector, actual: DblVector, comment: String): Int = {
-    val err = expected.zip(actual)./:(0.0)((err, z) => err + (z._1 - z._2) * (z._1 - z._2))
+    val err = expected.zip(actual)./:(0.0)((err, z) => {
+      val (exp, act) = z
+      err + (exp - act) * (exp - act)
+    })
     val lsError = Math.sqrt(err)
 
     show(s"$comment: $lsError")

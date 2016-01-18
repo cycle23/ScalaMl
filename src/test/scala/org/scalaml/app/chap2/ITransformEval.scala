@@ -69,7 +69,7 @@ object ITransformEval extends Eval {
       type V = Double
 
       override def |> : PartialFunction[Float, Try[V]] = {
-        case y: Float if (Math.abs(y) < 100) => Try(Math.exp(y))
+        case y: Float if Math.abs(y) < 100 => Try(Math.exp(y))
       }
     }
 
