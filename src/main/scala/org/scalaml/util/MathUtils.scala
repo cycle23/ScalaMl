@@ -241,12 +241,12 @@ object MathUtils {
       })
 
 
-    def diagonal: IndexedSeq[Double] = (0 until data.size by nCols + 1).map(data(_))
+    def diagonal: IndexedSeq[Double] = (data.indices by nCols + 1).map(data(_))
 
     def trace: Double = diagonal.sum
 
     def toArrayArray: DblMatrix =
-      (0 until data.size by nCols).map(n => data.slice(n, n + nCols)).toArray
+      (data.indices by nCols).map(n => data.slice(n, n + nCols)).toArray
 
     /**
       * Formatted textual representation of the matrix with rows and column indices.
@@ -297,7 +297,7 @@ object MathUtils {
       * @param xy Array of Array of elements
       */
     def apply(xy: DblMatrix): DMatrix =
-      new DMatrix(xy.size, xy(0).size, xy.flatten)
+      new DMatrix(xy.length, xy(0).length, xy.flatten)
 
 
     /**
@@ -316,7 +316,7 @@ object MathUtils {
     def fill(nCols: Int)(data: Seq[DblArray]): DMatrix = {
       val matrix = DMatrix(nCols, data.size)
       Range(0, nCols).foreach(i => {
-        Range(0, data.size).foreach(j => matrix.update(i, j, data(i)(j)))
+        data.indices.foreach(j => matrix.update(i, j, data(i)(j)))
       })
       matrix
     }
@@ -382,14 +382,14 @@ object MathUtils {
     def fisherYates(n: Int): IndexedSeq[Int] = {
 
       def fisherYates(seq: mutable.Seq[Int]): IndexedSeq[Int] = {
-        require(seq.size > 0, "Undefined argument")
+        require(seq.nonEmpty, "Undefined argument")
         Random.setSeed(System.currentTimeMillis)
 
-        (0 until seq.size).map(i => {
+        seq.indices.map(i => {
           var randomIdx: Int = i + Random.nextInt(seq.size - i)
           seq(randomIdx) ^= seq(i)
           seq(i) = seq(randomIdx) ^ seq(i)
-          seq(randomIdx) ^= (seq(i))
+          seq(randomIdx) ^= seq(i)
           seq(i)
         })
       }
