@@ -91,7 +91,8 @@ object DMatrixEval extends Eval with Assertable {
     show(s"transposed matrix\n${transposed.toString}")
 
     assertDblArray(transposed.data, expected.flatten, 1e-2)
-    val m2 = Range(0, 2)./:(DMatrix(3, 2))((m, n) => m +=(1, n, 1.0))
+    // create a 3x2 matrix and fold in special rule for cells (1,0) and (1,1)
+    val m2 = List(0, 1)./:(DMatrix(3, 2))((m, n) => m +=(1, n, 1.0))
     show(s"Fold results\n${m2.toString}")
   }
 }

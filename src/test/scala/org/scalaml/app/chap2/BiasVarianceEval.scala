@@ -48,6 +48,8 @@ object BiasVarianceEval extends Eval with Assertable {
   final val biasExpected = Array[Double](904.4, 401.9)
   final val varianceExpected = Array[Double](1184.8, 789.9)
 
+  val numSamples: Int = 160
+
   /**
     * Execution of the scalatest for Bias Variance  decomposition.
     * This method is invoked by the  actor-based test framework function, ScalaMlTest.evaluate
@@ -92,14 +94,14 @@ object BiasVarianceEval extends Eval with Assertable {
     // Uses jFreeChart to display the test data and the three models.
     display(models, training)
 
-    val bv = BiasVariance(target, 160).fit(models.map(_._1))
-    val mv = bv.unzip
-    println(s"${mv._1.mkString(",")}")
-    println(s"${mv._2.mkString(",")}")
+    val bv = BiasVariance(target, numSamples).fit(models.map(_._1))
+    val (biasV, varianceV) = bv.unzip
+    println(s"${biasV.mkString(",")}")
+    println(s"${varianceV.mkString(",")}")
     val result = format(bv.toVector, "Variance", "bias", SHORT)
 
-    assertDblArray(mv._1.toArray.take(2), biasExpected, 1.0)
-    assertDblArray(mv._2.toArray.take(2), varianceExpected, 1.0)
+    assertDblArray(biasV.toArray.take(2), biasExpected, 1.0)
+    assertDblArray(varianceV.toArray.take(2), varianceExpected, 1.0)
 
     show(s"Result variance bias\n${result}")
   }
@@ -107,10 +109,13 @@ object BiasVarianceEval extends Eval with Assertable {
   private def display(estF: List[(Double => Double, String)], f: Double => Double): Boolean = {
     import org.scalaml.plots.{LinePlot, BlackPlotTheme, LightPlotTheme, Legend}
     import ScalaMl._
-
-    val data: List[(DblVector, String)] = (Vector.tabulate(160)(f(_)), "f") ::
-      estF./:(List[(DblVector, String)]())((xs, g) =>
-        (Vector.tabulate(160)(y => g._1(y.toDouble)), g._2) :: xs)
+    // create a list of values over 160 samples against function "f" (training)
+    // as well as the 4 competing models, with the string for each set of doubles to display
+    val data: List[(DblVector, String)] = (Vector.tabulate(numSamples)(f(_)), "f") ::
+      estF./:(List[(DblVector, String)]())(
+        (xs, g) => {
+          val (g_model, g_name) = g
+          (Vector.tabulate(numSamples)(y => g_model(y.toDouble)), g_name) :: xs})
 
     val labels = Legend(name, "Bias and Variance: Over-under fitting", "x-values", "y-values")
     LinePlot.display(data, labels, new LightPlotTheme)
