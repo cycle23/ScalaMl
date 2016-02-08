@@ -62,7 +62,8 @@ final class ScatterPlot(legend: Legend, theme: PlotTheme) extends Plot(legend, t
     * @throws IllegalArgumentException if the dataset is undefined or the width or height
     *                                  are out of bounds.
     */
-  override def display(xy: Vector[DblPair], width: Int, height: Int): Boolean = {
+  override def display(xy: Vector[DblPair], width: Int, height: Int,
+                       isFile: Boolean, isScreen: Boolean): Boolean = {
     val validDisplay = validateDisplay[Vector[DblPair]](xy, width, height, "ScatterPlot.display")
     if (validDisplay) {
       val series = xy./:(new XYSeries(legend.title))((s, xy) => {
@@ -85,7 +86,8 @@ final class ScatterPlot(legend: Legend, theme: PlotTheme) extends Plot(legend, t
     * @throws IllegalArgumentException if the dataset is undefined or the width or height
     *                                  are out of bounds.
     */
-  override def display(y: DblArray, width: Int, height: Int): Boolean = {
+  override def display(y: DblArray, width: Int, height: Int,
+                       isFile: Boolean, isScreen: Boolean): Boolean = {
     val validDisplay = validateDisplay[DblArray](y, width, height, "ScatterPlot.display")
 
     if (validDisplay) {
@@ -246,14 +248,19 @@ object ScatterPlot {
   def display(
                y: DblArray,
                legend: Legend,
-               theme: PlotTheme): Boolean = {
+               theme: PlotTheme, isFile: Boolean = false, isScreen: Boolean = true): Boolean = {
     require(!y.isEmpty,
       s"${legend.key}.display Cannot plot an undefined time series")
 
     val plotter = new ScatterPlot(legend, theme)
-    plotter.display(y, DEFAULT_WIDTH, DEFAULT_WIDTH)
+    plotter.display(y, DEFAULT_WIDTH, DEFAULT_WIDTH, isFile, isScreen)
   }
 
+
+  def display(
+               xySeries: Vector[DblPair],
+               legend: Legend,
+               theme: PlotTheme, isFile: Boolean, isScreen: Boolean): Boolean = display(xySeries, Vector.empty[DblPair], legend, theme)
 
   def display(
                xySeries: Vector[DblPair],
@@ -274,7 +281,7 @@ object ScatterPlot {
     if (!xySeries2.isEmpty)
       plotter.display(xySeries1, xySeries2, DEFAULT_WIDTH, DEFAULT_WIDTH)
     else
-      plotter.display(xySeries1, DEFAULT_WIDTH, DEFAULT_WIDTH)
+      plotter.display(xySeries1, DEFAULT_WIDTH, DEFAULT_WIDTH, false, true)
   }
 }
 
