@@ -50,7 +50,7 @@ object LogBinRegressionEval extends Eval {
 
   private val NITERS = 4000
   private val EPS = 5e-4
-  private val ETA = 0.005
+  private val ETA = 0.0005
   private val path_training = "resources/data/Chap1/CSCO.csv"
   private val path_test = "resources/data/Chap1/CSCO2.csv"
 
@@ -165,10 +165,10 @@ object LogBinRegressionEval extends Eval {
     // TODO: Seems like the use of enumeration is causing more trouble than worth..
     // Maybe sealed case class would help simplify this (-- see TradingSource for more function helpers..)
     // NOTE - it only complains once it is using '4' for adj_close
-    val low = 0;
-    val high = 1;
-    val volume = 2;
-    val open = 3;
+    val low = 0
+    val high = 1
+    val volume = 2
+    val open = 3
     val adj_close = 4
     val conversion = toDblArray(features)
 

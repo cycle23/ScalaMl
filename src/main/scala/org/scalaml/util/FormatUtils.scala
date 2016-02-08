@@ -95,22 +95,22 @@ object FormatUtils {
   /**
     * Short format as 6.004912491 => 6.004
     */
-  final object SHORT extends FormatType("%8s", "#,##0.000")
+  object SHORT extends FormatType("%8s", "#,##0.000")
 
   /**
     * Short format with rounding error adjustment as 6.0049124 => 6.000
     */
-  final object SHORT_ROUND extends FormatType("%8s", "#,##0.000", ROUNDING_ERROR)
+  object SHORT_ROUND extends FormatType("%8s", "#,##0.000", ROUNDING_ERROR)
 
   /**
     * Medium format as 6.004912491 => 6.00491
     */
-  final object MEDIUM extends FormatType("%11s", "#,##0.00000")
+  object MEDIUM extends FormatType("%11s", "#,##0.00000")
 
   /**
     * Medium format as 6.004912491 => 6.004913491
     */
-  final object LONG extends FormatType("%15s", "#,##0.00000000")
+  object LONG extends FormatType("%15s", "#,##0.00000000")
 
   /**
     * Method to format a time series (x,y) tuples with labels for each axis,
@@ -128,16 +128,16 @@ object FormatUtils {
               fmt: FormatType,
               labels: Array[String] = Array.empty): String = {
 
-    require(!xy.isEmpty, "FormatUtils.format XYTSeries is undefined")
+    require(xy.nonEmpty, "FormatUtils.format XYTSeries is undefined")
 
     val labelsHeader = s"$xLabel\t$yLabel"
     val content = if (labels.isEmpty)
       xy.map { case (x, y) => s"${fmt.toString(x)}${fmt.toString(y)}" }.mkString("\n")
     else {
-      assert(xy.size == labels.size,
-        s"FormatUtils.toString data size ${xy.size} != number of labels ${labels.size}")
-      xy.zip(labels).map { case (z, lbl) =>
-        s"$lbl${fmt.toString(z._1)}${fmt.toString(z._2)}"
+      assert(xy.size == labels.length,
+        s"FormatUtils.toString data size ${xy.size} != number of labels ${labels.length}")
+      xy.zip(labels).map { case ((x,y), lbl) =>
+        s"$lbl${fmt.toString(x)}${fmt.toString(y)}"
       }.mkString("\n")
     }
 
@@ -152,10 +152,11 @@ object FormatUtils {
     * @param fmt Format type used in the representation of the time series values
     */
   def format[T](x: Vector[T], label: String, fmt: FormatType): String = {
-    require(!x.isEmpty, "FormatUtils.format Array of type T is undefined")
+    require(x.nonEmpty, "FormatUtils.format Array of type T is undefined")
 
-    val content = x.view.zipWithIndex.map { case (x, n) => s"${n}  ${fmt.toString(x)}" }.mkString("\n")
-    if (label.size > 0)
+    val content = x.view.zipWithIndex.map
+          { case (x, n) => s"$n  ${fmt.toString(x)}" }.mkString("\n")
+    if (label.length > 0)
       s"${fmt.toString(label)}\n$content"
     else
       content
@@ -171,7 +172,7 @@ object FormatUtils {
     * @param x vector or single variable time seriesT
     */
   def format(x: DblVector): String = {
-    require(!x.isEmpty, "FormatUtils.format Vector of double is undefined")
+    require(x.nonEmpty, "FormatUtils.format Vector of double is undefined")
 
     x.view.zipWithIndex.map { case (x, n) => s"$x  ${SHORT.toString(n)}" }.mkString(" ")
   }
@@ -195,9 +196,9 @@ object FormatUtils {
   def format(m: DblMatrix, fmt: FormatType): String = {
     require(!m.isEmpty, "FormatUtils.format Matrix is undefined")
 
-    val header = Range(0, m(0).size).map(n => s"${fmt.toString(n)}").mkString
-    val content = Range(0, m.size).map(i => s"${fmt.toString(i)} ${
-      Range(0, m(0).size).map(j
+    val header = m(0).indices.map(n => s"${fmt.toString(n)}").mkString
+    val content = m(0).indices.map(i => s"${fmt.toString(i)} ${
+      m(0).indices.map(j
       => s"${fmt.toString(m(i)(j))}").mkString
     }").mkString("\n")
     s"$header\n$content"
@@ -229,9 +230,9 @@ object FormatUtils {
       "ScalaMl.toText Cannot create a textual representation of a undefined vector")
 
     if (index)
-      m.view.zipWithIndex.map { case (u, v) => s"$v:${toText(u, true)}" }.mkString("\n")
+      m.view.zipWithIndex.map { case (u, v) => s"$v:${toText(u, index=true)}" }.mkString("\n")
     else
-      m.view.map(v => s"${toText(v, false)}").mkString("\n")
+      m.view.map(v => s"${toText(v, index=false)}").mkString("\n")
   }
 }
 

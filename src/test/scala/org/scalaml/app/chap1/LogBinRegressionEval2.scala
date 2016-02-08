@@ -76,7 +76,7 @@ object LogBinRegressionEval2 extends Eval {
       Array[Double](0.59, 0.63),
       Array[Double](0.67, 0.21)
     )
-    // Unormalized expected values
+    // Non-normalized expected values
     val y1 = Vector[Double](1.01, 1.06, 2.49, 1.09, 0.9, 4.58, 3.81, 1.66)
 
     // Input data (single dimension)
@@ -91,7 +91,7 @@ object LogBinRegressionEval2 extends Eval {
       Array[Double](0.42),
       Array[Double](0.0)
     )
-    // Unormalized expected values
+    // Non-normalized expected values
     val y2 = Vector[Int](1, 2, 1, 9, 6, 9, 0, 4, 0)
 
     // Implicit conversion from Array[Double] to Double

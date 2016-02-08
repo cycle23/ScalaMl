@@ -64,7 +64,7 @@ class BiasVariance(target: Double => Double, nValues: Int) {
     */
   @throws(classOf[IllegalArgumentException])
   def fit(models: List[Double => Double]): List[DblPair] = {
-    require(!models.isEmpty,
+    require(models.nonEmpty,
       "BiasVarianceEmulator.fit Cannot test the fitness of an undefined function")
 
     // Compute the mean value for the different models
