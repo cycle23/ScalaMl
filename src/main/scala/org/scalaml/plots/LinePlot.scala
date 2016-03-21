@@ -18,6 +18,7 @@
 package org.scalaml.plots
 
 import java.awt.{GradientPaint, Color, Stroke, Shape, Paint, BasicStroke}
+import java.io.File
 
 import org.jfree.data.xy.{XYSeriesCollection, XYSeries}
 import org.jfree.data.category.{DefaultCategoryDataset, CategoryDataset}
@@ -72,12 +73,13 @@ final class LinePlot(legend: Legend, theme: PlotTheme) extends Plot(legend, them
     * @throws IllegalArgumentException if the dataset is undefined or the width or height are
     *                                  out of bounds.
     */
-  override def display(xy: Vector[DblPair], w: Int, h: Int): Boolean = {
+  override def display(xy: Vector[DblPair], w: Int, h: Int,
+                       toFile: Boolean, toScreen: Boolean): Boolean = {
     val validDisplay = validateDisplay[Vector[DblPair]](xy, w, h, "LinePlot.display")
     if (validDisplay) {
       val catDataset = new DefaultCategoryDataset
       xy.foreach(x => catDataset.addValue(x._1, legend.xLabel, String.valueOf(x._2.toInt)))
-      draw(catDataset, w, h)
+      draw(catDataset, w, h, toFile, toScreen)
     }
     validDisplay
   }
@@ -92,25 +94,26 @@ final class LinePlot(legend: Legend, theme: PlotTheme) extends Plot(legend, them
     * @throws IllegalArgumentException if the dataset is undefined or the width or height are
     *                                  out of bounds.
     */
-  override def display(y: DblArray, w: Int, h: Int): Boolean = {
+  override def display(y: DblArray, w: Int, h: Int, toFile: Boolean, toScreen: Boolean): Boolean = {
     val validDisplay = validateDisplayUtils(y, w, h, "LinePlot.display")
     if (validDisplay) {
       val catDataset = new DefaultCategoryDataset
       y.view.zipWithIndex.foreach { case (x, n) =>
         catDataset.addValue(x, legend.xLabel, String.valueOf(n))
       }
-      draw(catDataset, w, h)
+      draw(catDataset, w, h, toFile, toScreen)
     }
     validDisplay
   }
 
 
   import scala.collection._
-
   def display(
                xys: immutable.List[(DblVector, String)],
                w: Int,
-               h: Int): Boolean = {
+               h: Int,
+               toFile: Boolean = false,
+               toScreen: Boolean = true): Boolean = {
 
     import scala.collection.JavaConversions._
     val validDisplay = validateDisplay[List[(DblVector, String)]](xys, w, h, "LinePlot.display")
@@ -144,13 +147,22 @@ final class LinePlot(legend: Legend, theme: PlotTheme) extends Plot(legend, them
         xyLineRenderer.setSeriesShapesVisible(n, true)
         xyLineRenderer.setSeriesShape(n, shapes(n % shapes.size))
       })
-
-      createFrame(s"${legend.title}", chart)
+      if (toFile) {
+        import org.jfree.chart.ChartUtilities
+        val file: File = new File(legend.title.replace(" ", "_") + ".png")
+        ChartUtilities.saveChartAsPNG(file, chart, 800, 600)
+      }
+      if (toScreen) {
+        createFrame(s"${legend.title}", chart)
+      }
     }
     validDisplay
   }
 
-  private def draw(catDataset: CategoryDataset, w: Int, h: Int): Unit = {
+  private def draw(catDataset: CategoryDataset, w: Int, h: Int,
+                   toFile: Boolean = false,
+                   toScreen: Boolean = true
+                  ): Unit = {
     val chart = ChartFactory.createLineChart(legend.title, legend.xLabel, legend.yLabel, catDataset,
       PlotOrientation.VERTICAL, false, false, false)
 
@@ -166,7 +178,15 @@ final class LinePlot(legend: Legend, theme: PlotTheme) extends Plot(legend, them
     renderer.setSeriesPaint(0, theme.color(0))
 
     plot.setBackgroundPaint(theme.paint(w, h))
-    createFrame(legend.title, chart)
+    if (toFile) {
+      import org.jfree.chart.ChartUtilities
+      val file: File = new File(legend.title.replace(" ", "_") + ".png")
+      ChartUtilities.saveChartAsPNG(file, chart, 800, 600)
+    }
+    if (toScreen) {
+      createFrame(legend.title, chart)
+    }
+
   }
 }
 
@@ -195,22 +215,43 @@ object LinePlot {
   def display(
                y: DblVector,
                legend: Legend,
-               theme: PlotTheme): Boolean =
-    createPlot(DisplayUtils.isChart, legend, theme).display(y.toArray, DEFAULT_WIDTH, DEFAULT_WIDTH)
+               theme: PlotTheme,
+               toFile: Boolean = false,
+               toScreen: Boolean = true): Boolean =
+    createPlot(DisplayUtils.isChart, legend, theme).display(y.toArray, DEFAULT_WIDTH, DEFAULT_WIDTH, toFile, toScreen)
 
 
   def display(
                y: DblArray,
                legend: Legend,
+               theme: PlotTheme,
+               toFile: Boolean,
+               toScreen: Boolean): Boolean =
+    createPlot(DisplayUtils.isChart, legend, theme).display(y, DEFAULT_WIDTH, DEFAULT_WIDTH, toFile, toScreen)
+
+
+  def display(
+               xys: List[(DblVector, String)],
+               legend: Legend,
+               theme: PlotTheme,
+               toFile: Boolean,
+               toScreen: Boolean): Boolean =
+    createPlot(DisplayUtils.isChart, legend, theme).display(xys, DEFAULT_WIDTH, DEFAULT_WIDTH,
+                                                              toFile, toScreen)
+
+  def display(
+               y: DblArray,
+               legend: Legend,
                theme: PlotTheme): Boolean =
-    createPlot(DisplayUtils.isChart, legend, theme).display(y, DEFAULT_WIDTH, DEFAULT_WIDTH)
+    createPlot(DisplayUtils.isChart, legend, theme).display(y, DEFAULT_WIDTH, DEFAULT_WIDTH, false, true)
 
 
   def display(
                xys: List[(DblVector, String)],
                legend: Legend,
                theme: PlotTheme): Boolean =
-    createPlot(DisplayUtils.isChart, legend, theme).display(xys, DEFAULT_WIDTH, DEFAULT_WIDTH)
+    createPlot(DisplayUtils.isChart, legend, theme).display(xys, DEFAULT_WIDTH, DEFAULT_WIDTH,
+      false, true)
 
 
   private def createPlot(

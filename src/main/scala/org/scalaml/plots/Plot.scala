@@ -76,7 +76,8 @@ abstract class Plot(legend: Legend, theme: PlotTheme) {
     * @param width Width for the display (pixels)
     * @param height Height of the chart (pixels)
     */
-  def display(xy: Vector[DblPair], width: Int, height: Int): Boolean
+  def display(xy: Vector[DblPair], width: Int, height: Int,
+              toFile: Boolean, toScreen: Boolean): Boolean
 
 
   /**
@@ -87,7 +88,8 @@ abstract class Plot(legend: Legend, theme: PlotTheme) {
     * @param height Height of the chart (pixels)
     */
 
-  def display(y: DblArray, width: Int, height: Int): Boolean
+  def display(y: DblArray, width: Int, height: Int,
+              toFile: Boolean, toScreen: Boolean): Boolean
 
 
   protected def createFrame(id: String, chart: JFreeChart): Unit = {
