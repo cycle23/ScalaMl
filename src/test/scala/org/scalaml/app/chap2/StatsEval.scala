@@ -90,7 +90,7 @@ object StatsEval extends Eval with Assertable {
     } +
       compare(NORMALIZED.toVector, normalized, "Least square error") +
       compare(NORMAL_005, Stats.normal(0.05), "Gauss(0.05)") +
-      compare(NORMAL_005, Stats.normal(0.05), "Gauss(0.95)") + {
+      compare(NORMAL_095, Stats.normal(0.95), "Gauss(0.95)") + {
       var sum: Int = 0
       for (i <- VALUES.indices)
         yield {

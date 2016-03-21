@@ -78,6 +78,8 @@ object ETransformEval extends Eval {
     // Get the new ETransform
     val result = _eTransform.map(_ + 1).config
     assert(result == 6, s"$header found $result require 6")
+
+    // TODO - test |> transform
     show(s"$header test completed")
   }
 }

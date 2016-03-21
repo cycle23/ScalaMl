@@ -44,8 +44,7 @@ import XTSeries._
   *       ''sse'' and ''mse'' in 0.99
   */
 object XTSeries {
-  final val EPS = 1 - 20
-
+  final val EPS = 1e-20
 
   private val logger = Logger.getLogger("XTSeries")
 
@@ -87,7 +86,7 @@ object XTSeries {
 
   /**
     * Generate a time series of tuple of type (T,T) by zipping the time series
-    * with itself
+    * with itself shifted by 1
     * @tparam T type of element (or data point or observation) of the time series
     * @param xv Single variable vector to be zipped
     * @return time series of pairs from shifted Vectors.
@@ -96,17 +95,17 @@ object XTSeries {
 
   /**
     * Generate a time series of tuple of type (T,T) by zipping the time series
-    * with itself
+    * with itself shifted by 1
     * @tparam T type of element (or data point or observation) of the time series
-    * @param xv Single variable vector to be zipped
-    * @return time series of pairs from shifted Vectors.
+    * @param xv Single variable array to be zipped
+    * @return time series of pairs from shifted Arrays.
     */
   def zipWithShift1[T](xv: Array[T]): Array[(T, T)] = xv.zip(xv.view.drop(1))
 
   /**
     * Splits this time series into two distinct time series at a given index '''n'''
     * @tparam T type of element (or data point or observation) of the time series
-    * @param xv Multi-variable vector to be splitted
+    * @param xv Multi-variable vector to be split
     * @param n index in the time series used in the split
     * @return 2-tuple or pair of times series ''(ts1, ts2)'' ts1 containing n first elements
     *         in the original time series, ts2 containing the remaining elements
@@ -147,10 +146,10 @@ object XTSeries {
   @implicitNotFound(msg = "XTSeries.normalize conversion from $T to Double undefined")
   @throws(classOf[IllegalStateException])
   @throws(classOf[IllegalArgumentException])
-  def normalize[T <: AnyVal](
-                              xt: XSeries[T],
-                              low: Double,
-                              high: Double)(implicit ordering: Ordering[T], f: T => Double): Try[DblVector] =
+  def normalize[T <: AnyVal](xt: XSeries[T],
+                             low: Double,
+                             high: Double)
+                            (implicit ordering: Ordering[T], f: T => Double): Try[DblVector] =
   // TODO: Why use the Stats intermediary here?
   // It does have the effect of giving access to the MinMax normalize routine by class inheritance
   // and the implicit companion object conversion
@@ -181,9 +180,10 @@ object XTSeries {
     */
   @throws(classOf[IllegalArgumentException])
   @implicitNotFound(msg = "XTSeries.normalize convertion from $T to Double undefined")
-  def normalize[T <: AnyVal](
-                              xt: XVSeries[T])
-                            (implicit order: Ordering[T], m: Manifest[T], f: T => Double): Try[Vector[DblArray]] = {
+  def normalize[T <: AnyVal](xt: XVSeries[T])
+                            (implicit order: Ordering[T],
+                                      m: Manifest[T], // TODO - look deeper
+                                      f: T => Double): Try[Vector[DblArray]] = {
 
     require(!xt.isEmpty,
       "XTSeries.normalize Cannot normalize an undefined time series of elements")
@@ -191,7 +191,6 @@ object XTSeries {
       "XTSeries.normalize Incorrect function to normalize a single dimension time series")
 
     var k = 0;
-    val res = new Array[Array[T]](xt.size)
     val dim = dimension(xt)
 
     val min = Array.fill(dim)(Double.MaxValue)
@@ -212,6 +211,7 @@ object XTSeries {
       k += 1
     }
 
+    // TODO - read up on use of VectorBuilder
     val data = new VectorBuilder[DblArray]
     k = 0
 
@@ -232,7 +232,9 @@ object XTSeries {
 
 
   @throws(classOf[IllegalArgumentException])
-  def zScore[T <: AnyVal](xt: XSeries[T])(implicit f: T => Double): Try[DblVector] = Try(Stats[T](xt).zScore)
+  def zScore[T <: AnyVal](xt: XSeries[T])
+                         (implicit f: T => Double): Try[DblVector] =
+      Try(Stats[T](xt).zScore) // TODO - Similar to MinMax usage above?
 
 
   /**
@@ -246,6 +248,7 @@ object XTSeries {
   @throws(classOf[IllegalArgumentException])
   def zScores[T <: AnyVal](xt: XVSeries[T])(implicit f: T => Double): Try[XVSeries[Double]] = {
     require(!xt.isEmpty, "XTSeries.zScoring Cannot zScore an undefined time series")
+    // TODO - why immutable for this function? Is default above 'mutable'?
     import scala.collection.immutable.VectorBuilder
 
     val stats = statistics(xt)
@@ -257,6 +260,7 @@ object XTSeries {
     Try {
       while (k < xt.size) {
         var j = 0
+        // TODO - compare use of Array.fill vs. new above
         val arr = Array.fill(dimension)(0.0)
         while (j < dimension) {
           arr(j) = (xt(k)(j) - stats(j).mean) / stats(j).stdDev
@@ -290,9 +294,9 @@ object XTSeries {
       def apply(): Result
     }
 
-
+    // TODO - handle implicit vs. return type warnings
     /**
-      * Transpose a time series fo type XVSeries
+      * Transpose a time series of type XVSeries
       * @tparam T type of element (or data point or observation) of the time series
       * @param from Vector of array of elements of type T
       * @return Transposed matrix of type Array of Array
@@ -571,7 +575,7 @@ object XTSeries {
     * @return Statistics instance
     */
   def statistics[T <: AnyVal](xt: XSeries[T])(implicit f: T => Double): Stats[T] = Stats[T](xt)
-
+  // TODO - perhaps use this instead of direct use of Stats for earlier calls?
 
   /**
     * Compute the basic statistics for each dimension of a time series

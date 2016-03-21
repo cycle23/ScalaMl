@@ -72,7 +72,7 @@ trait Assertable {
                                eps: Double): Int = {
 
     val xCompare = (x: Double, y: Double) => Math.abs(x - y)
-    assert(zipToXSeries(predicted, expected)(xCompare).find(_ > eps) == None, assertMsg)
+    assert(!zipToXSeries(predicted, expected)(xCompare).exists(_ > eps), assertMsg)
     1
   }
 
@@ -89,7 +89,8 @@ trait Assertable {
   protected def assertDblArray(
                                 predicted: Array[Double],
                                 expected: Array[Double],
-                                eps: Double): Int = assertXSeries(predicted.toVector, expected.toVector, eps)
+                                eps: Double): Int =
+    assertXSeries(predicted.toVector, expected.toVector, eps)
 
   /**
     * Method that compares two values of type Double
@@ -114,7 +115,7 @@ trait Assertable {
 
   protected def assertVector[T](predicted: Vector[T], expected: Vector[T]): Unit = {
     val failed = predicted.zip(expected.view).map { case (p, e) => p == e }.find(_ == false)
-    assert(failed == None, assertMsg)
+    assert(failed.isEmpty, assertMsg)
   }
 
   protected def assertList[T](predicted: List[T], expected: List[T]): Unit =

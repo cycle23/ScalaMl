@@ -75,7 +75,9 @@ protected class SimpleMovingAverage[T <: AnyVal](period: Int)
   type U = XSeries[T]
   type V = DblVector
 
-  protected[this] val zeros = if (zerosPadded) Vector.fill(period - 1)(0.0) else Vector.empty[Double]
+  protected[this] val zeros =
+    if (zerosPadded) Vector.fill(period - 1)(0.0)
+    else Vector.empty[Double]
 
   /**
     * Implementation of the data transformation of a time series of type T to a time series
@@ -86,7 +88,7 @@ protected class SimpleMovingAverage[T <: AnyVal](period: Int)
     *         Double as output.
     */
   override def |> : PartialFunction[U, Try[V]] = {
-    case xt: U if (!xt.isEmpty) => Try(get(xt))
+    case xt: U if xt.nonEmpty => Try(get(xt))
   }
 
 
@@ -97,7 +99,7 @@ protected class SimpleMovingAverage[T <: AnyVal](period: Int)
     *         type vector of Double for output.
     */
   def get: PartialFunction[XSeries[T], DblVector] = {
-    case data: XSeries[T] if (data.size >= period) => {
+    case data: XSeries[T] if data.size >= period =>
 
       // Create a sliding window as a array of pairs of values (x(t), x(t-p))
       val splits = data.splitAt(period)
@@ -108,8 +110,9 @@ protected class SimpleMovingAverage[T <: AnyVal](period: Int)
       val zero = splits._1.sum / period
 
       val smoothed = slider.scanLeft(zero) { case (s, (x, y)) => s + (y - x) / period }
-      if (!zeros.isEmpty) zeros ++ smoothed else smoothed
-    }
+      if (zeros.nonEmpty) zeros ++ smoothed
+      else smoothed
+
   }
 }
 
@@ -128,17 +131,16 @@ object SimpleMovingAverage {
     * @param num implicit instance of Numeric type
     * @return Simple moving average with a specific period
     */
-  def apply[T <: AnyVal](
-                          period: Int,
-                          padded: Boolean = true)(implicit num: Numeric[T], f: T => Double): SimpleMovingAverage[T] = {
-
+  def apply[T <: AnyVal](period: Int,
+                         padded: Boolean = true)
+                        (implicit num: Numeric[T], f: T => Double): SimpleMovingAverage[T] = {
     zerosPadded = padded
     new SimpleMovingAverage[T](period)
   }
 
-  def apply[T <: AnyVal](period: Int)(implicit num: Numeric[T], f: T => Double): SimpleMovingAverage[T] =
+  def apply[T <: AnyVal](period: Int)
+                        (implicit num: Numeric[T], f: T => Double): SimpleMovingAverage[T] =
     new SimpleMovingAverage[T](period)
-
 
   implicit var zerosPadded: Boolean = true
 }
@@ -162,8 +164,7 @@ object SimpleMovingAverage {
   */
 @throws(classOf[IllegalArgumentException])
 @implicitNotFound(msg = "ExpMovingAverage Numeric bound has to be implicitly defined for $T")
-final protected class ExpMovingAverage[@specialized(Double) T <: AnyVal](
-                                                                          alpha: Double)
+final protected class ExpMovingAverage[@specialized(Double) T <: AnyVal](alpha: Double)
                                                                         (implicit f: T => Double)
   extends ETransform[Double](alpha) with MovingAverage[T] {
 

@@ -66,7 +66,7 @@ object MovingAveragesEval2 extends FilteringEval with Assertable {
 
 
   /**
-    * Execution of the scalatest for '''SimpleMovingAveragte''', '''WeightedMovingAverage'''
+    * Execution of the scalatest for '''SimpleMovingAverage''', '''WeightedMovingAverage'''
     * and '''ExpMovingAverage''' classes
     * This method is invoked by the  actor-based test framework function, ScalaMlTest.evaluate
     *
