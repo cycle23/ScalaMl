@@ -109,7 +109,7 @@ final class DataSource(
     */
   def loadConvert[T: ClassTag](implicit c: String => T): Try[List[Array[T]]] = Try {
     val src = Source.fromFile(config.pathName)
-    val fields = src.getLines.map(_.split(CSV_DELIM).map(c(_))).toList
+    val fields = src.getLines.map(_.split(CSV_DELIM).map(c)).toList
     src.close
     fields
   }
@@ -122,13 +122,13 @@ final class DataSource(
     *         a corresponding list of floating point value as output
     */
   override def |> : PartialFunction[U, Try[V]] = {
-    case fields: U if (!fields.isEmpty) => load.map(data => {
-      val convert = (f: Fields => Double) => data._2.map(f(_))
+    case fields: U if fields.nonEmpty => load.map(data => {
+      val convert = (f: Fields => Double) => data._2.map(f)
 
       if (config.normalize)
         fields.map(t => new MinMax[Double](convert(t)).normalize(0.0, 1.0).toArray).toVector
       else
-        fields.map(convert(_)).toVector
+        fields.map(convert).toVector
     })
   }
 
@@ -145,7 +145,7 @@ final class DataSource(
 
   def get(extr: Fields => Double): Try[DblVector] = load.map(data => {
 
-    val nData = data._2.map(extr(_)).toVector
+    val nData = data._2.map(extr).toVector
     if (config.normalize) new MinMax[Double](nData).normalize(0.0, 1.0) else nData
   })
 
@@ -163,9 +163,9 @@ final class DataSource(
 
   def load(extr: Fields => DblArray): Try[Vector[DblArray]] = load.map(data => {
     if (config.normalize)
-      normalize(data._2.map(extr(_)).toVector).get
+      normalize(data._2.map(extr).toVector).get
     else
-      data._2.map(extr(_)).toVector
+      data._2.map(extr).toVector
   })
 
 
@@ -177,7 +177,7 @@ final class DataSource(
     val src = Source.fromFile(config.pathName)
     val rawFields = src.getLines.map(_.split(CSV_DELIM)).toArray.drop(config.headerLines)
 
-    val fields = if (srcFilter != None) rawFields.filter(srcFilter.get) else rawFields
+    val fields = if (srcFilter.isDefined) rawFields.filter(srcFilter.get) else rawFields
     val results = if (config.reverseOrder) fields.reverse else fields
 
     val textFields = (fields(0), results)

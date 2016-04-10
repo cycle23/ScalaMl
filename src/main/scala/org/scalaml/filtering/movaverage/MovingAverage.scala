@@ -107,9 +107,9 @@ protected class SimpleMovingAverage[T <: AnyVal](period: Int)
 
       // 1. Compute the average value over the time window for the first 'period' data points
       // 2. Apply the sliding window 'slider' across the time series
-      val zero = splits._1.sum / period
+      val initAve = splits._1.sum / period
 
-      val smoothed = slider.scanLeft(zero) { case (s, (x, y)) => s + (y - x) / period }
+      val smoothed = slider.scanLeft(initAve) { case (s, (x, y)) => s + (y - x) / period }
       if (zeros.nonEmpty) zeros ++ smoothed
       else smoothed
 
